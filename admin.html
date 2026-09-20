@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Dashboard | ThePolarBear</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --papier:#F3F7F9;
+  --mriezka:#DDEAF0;
+  --mriezka-silna:#C9DDE7;
+  --atrament:#12171A;
+  --grafit:#5C6A72;
+  --lad:#A9CFE0;
+  --tyrkys:#2A8496;
+  --hlbka:#17505C;
+  --stlpec:64rem;
+}
+html[data-rezim="dark"]{
+  --papier:#0D1316;
+  --mriezka:#161F25;
+  --mriezka-silna:#1E2C34;
+  --atrament:#E7EFF3;
+  --grafit:#8B9EA9;
+  --lad:#3D6274;
+  --tyrkys:#5AB6CA;
+  --hlbka:#A6C6D2;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  color:var(--atrament);
+  background-color:var(--papier);
+  background-image:
+    linear-gradient(var(--mriezka-silna) 1px,transparent 1px),
+    linear-gradient(90deg,var(--mriezka-silna) 1px,transparent 1px),
+    linear-gradient(var(--mriezka) 1px,transparent 1px),
+    linear-gradient(90deg,var(--mriezka) 1px,transparent 1px);
+  background-size:80px 80px,80px 80px,16px 16px,16px 16px;
+  font-family:"IBM Plex Sans",system-ui,sans-serif;
+  font-size:17px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:4rem;
+  transition:background-color .25s ease,color .25s ease;
+}
+.obal{max-width:var(--stlpec);margin:0 auto;padding:0 2rem}
+
+.navigacia{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1.5rem 0;border-bottom:1px solid var(--mriezka-silna);
+  margin-bottom:2.5rem;
+}
+.navigacia a{color:var(--tyrkys);text-decoration:none;font-family:"IBM Plex Mono",monospace;font-size:.85rem}
+.navigacia a:hover{color:var(--hlbka)}
+
+/* Prepínač tém */
+.prepinac{
+  position:relative;display:flex;align-items:stretch;
+  width:56px;height:32px;flex:none;padding:3px;cursor:pointer;
+  border:1px solid var(--mriezka-silna);border-radius:999px;background:transparent;
+}
+.prepinac .puk{
+  position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+  background:var(--tyrkys);
+  transition:transform .3s cubic-bezier(.2,.6,.25,1);
+}
+html[data-rezim="dark"] .prepinac .puk{transform:translateX(24px)}
+.prepinac .ikona{
+  position:relative;z-index:2;flex:1 1 24px;
+  display:flex;align-items:center;justify-content:center;color:var(--grafit);
+}
+.prepinac svg{
+  display:block;width:16px;height:16px;
+  fill:none;stroke:currentColor;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+html:not([data-rezim="dark"]) .prepinac .slnko{color:var(--papier)}
+html[data-rezim="dark"] .prepinac .mesiac{color:var(--papier)}
+
+/* Záložky */
+.zalozky{
+  display:flex;gap:6px;padding:4px;
+  border:1px solid var(--mriezka-silna);border-radius:999px;
+  margin-bottom:2rem;width:fit-content;overflow-x:auto;
+}
+.zalozky button{
+  font-family:"IBM Plex Mono",monospace;font-size:.78rem;
+  padding:.5rem 1rem;border:0;border-radius:999px;cursor:pointer;
+  background:transparent;color:var(--grafit);
+  transition:background-color .22s ease,color .22s ease;
+}
+.zalozky button.active{background:var(--tyrkys);color:var(--papier)}
+
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+.karta{
+  background:var(--papier);
+  border:1px solid var(--mriezka-silna);
+  padding:1.75rem;border-radius:8px;margin-bottom:1.5rem;
+}
+
+.form-skupina{margin-bottom:1.25rem}
+.form-skupina label{display:block;font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--grafit);margin-bottom:.4rem}
+.form-vstup{
+  width:100%;padding:.7rem 1rem;
+  font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:.95rem;
+  color:var(--atrament);background:var(--papier);
+  border:1px solid var(--mriezka-silna);border-radius:6px;
+  transition:border-color .22s ease;
+}
+.form-vstup:focus{outline:none;border-color:var(--tyrkys)}
+
+.tlacidlo{
+  font-family:"IBM Plex Mono",monospace;font-size:.8rem;
+  padding:.6rem 1.25rem;border:1px solid var(--tyrkys);border-radius:999px;
+  background:var(--tyrkys);color:var(--papier);cursor:pointer;
+  transition:background-color .22s ease;
+}
+.tlacidlo:hover{background:var(--hlbka);border-color:var(--hlbka)}
+.tlacidlo.cervene{background:#ef4444;border-color:#ef4444;color:#fff}
+.tlacidlo.cervene:hover{background:#dc2626;border-color:#dc2626}
+
+.tlacidlo.maly{padding:.35rem .8rem;font-size:.72rem}
+.hlavicka-zaznamu{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+.stav-sprava{margin-top:.75rem;font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--grafit)}
+.metrika{font-size:3.5rem;font-weight:600;font-family:"IBM Plex Mono",monospace;color:var(--tyrkys)}
+</style>
+</head>
+<body>
+
+<div class="obal">
+  <header class="navigacia">
+    <a href="index.html">← Späť na web</a>
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <button type="button" class="prepinac" role="switch" aria-checked="false" aria-label="Dark mode">
+        <span class="puk"></span>
+        <span class="ikona slnko"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.4"/><path d="M12 2.4v2.4M12 19.2v2.4M2.4 12h2.4M19.2 12h2.4M5.2 5.2l1.7 1.7M17.1 17.1l1.7 1.7M18.8 5.2l-1.7 1.7M6.9 17.1l-1.7 1.7"/></svg></span>
+        <span class="ikona mesiac"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 14.6A8.6 8.6 0 0 1 9.4 3.8a8.6 8.6 0 1 0 10.8 10.8z"/></svg></span>
+      </button>
+      <button id="logout-btn" class="tlacidlo cervene" style="display:none;">Odhlásiť sa</button>
+    </div>
+  </header>
+
+  <!-- PRIHLÁSENIE -->
+  <section id="login-section" class="karta" style="max-width:420px;margin:3rem auto;">
+    <h2 style="margin-top:0;font-size:1.2rem;">Admin Prihlásenie</h2>
+    <form id="login-form">
+      <div class="form-skupina">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" class="form-vstup" required>
+      </div>
+      <div class="form-skupina">
+        <label for="password">Heslo</label>
+        <input type="password" id="password" class="form-vstup" required>
+      </div>
+      <button type="submit" class="tlacidlo">Prihlásiť sa</button>
+    </form>
+    <div id="login-status" style="margin-top:1rem;font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:#ef4444;"></div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard-section" style="display:none;">
+    <h1 style="font-size:2rem;margin-bottom:1.5rem;">Admin Dashboard</h1>
+
+    <div class="zalozky">
+      <button class="tab-btn active" onclick="openTab('tab-stats', this)">📊 Štatistiky</button>
+      <button class="tab-btn" onclick="openTab('tab-diary', this)">📓 Denník</button>
+      <button class="tab-btn" onclick="openTab('tab-calls', this)">📅 Konzultácie</button>
+      <button class="tab-btn" onclick="openTab('tab-msgs', this)">💬 Správy</button>
+    </div>
+
+    <!-- ZÁLOŽKA: ŠTATISTIKY -->
+    <div id="tab-stats" class="tab-content active">
+      <div class="karta">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:var(--grafit);">Celkový počet návštev webu</span>
+        <div id="view-count" class="metrika">--</div>
+      </div>
+    </div>
+
+    <!-- ZÁLOŽKA: DENNÍK -->
+    <div id="tab-diary" class="tab-content">
+      <div class="karta">
+        <h3 style="margin-top:0;">Pridať nový zápis do denníka</h3>
+        <form id="diary-form">
+          <div class="form-skupina">
+            <label for="d-title">Názov zápisu</label>
+            <input type="text" id="d-title" maxlength="120" class="form-vstup" placeholder="Pokroky..." required>
+          </div>
+          <div class="form-skupina">
+            <label for="d-content">Obsah</label>
+            <textarea id="d-content" rows="4" maxlength="5000" class="form-vstup" placeholder="Čo si dnes spravil?" required></textarea>
+          </div>
+          <button type="submit" class="tlacidlo">Uložiť zápis</button>
+          <div id="diary-status" class="stav-sprava"></div>
+        </form>
+      </div>
+      <h3>Zápisy v denníku</h3>
+      <div id="diary-list">Načítavam...</div>
+    </div>
+
+    <!-- ZÁLOŽKA: KONZULTÁCIE -->
+    <div id="tab-calls" class="tab-content">
+      <h3>Žiadosti o hovor / Konzultácie</h3>
+      <div id="calls-list">Načítavam...</div>
+    </div>
+
+    <!-- ZÁLOŽKA: SPRÁVY -->
+    <div id="tab-msgs" class="tab-content">
+      <h3>Správy od návštevníkov</h3>
+      <div id="msgs-list">Načítavam...</div>
+    </div>
+  </section>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://ybajdglmvygbiurxnlgg.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InliYWpkZ2xtdnlnYml1cnhubGdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NzY0NDksImV4cCI6MjEwNTQ1MjQ0OX0.XiQkxvhM-z02FUiBk2TDkrDjqKOFG3VeCElEX-mFdLU';
+
+  /* Escapovanie vsetkeho, co prislo z databazy.
+     Bez toho by sa HTML od navstevnika spustilo v tvojom prihlasenom prehliadaci. */
+  function bezpecne(t){
+    return String(t == null ? '' : t).replace(/[&<>"']/g, function(z){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[z];
+    });
+  }
+  function datum(d){ return bezpecne(new Date(d).toLocaleString('sk-SK')); }
+  function datumKratky(d){ return bezpecne(new Date(d).toLocaleDateString('sk-SK')); }
+
+  /* Prepinac temy nepotrebuje databazu, preto je mimo straze nizsie */
+  var prepinac = document.querySelector(".prepinac");
+  function nastavRezim(r){
+    document.documentElement.setAttribute("data-rezim", r);
+    prepinac.setAttribute("aria-checked", r === "dark" ? "true" : "false");
+  }
+  nastavRezim(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  prepinac.addEventListener("click", function(){
+    nastavRezim(document.documentElement.getAttribute("data-rezim") === "dark" ? "light" : "dark");
+  });
+
+  function openTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  var sb = null;
+
+  if (!window.supabase) {
+    /* Kniznica sa nenacitala - radsej to povedz, nez aby stranka tichucko nefungovala */
+    document.getElementById('login-status').textContent =
+      'Nepodarilo sa načítať knižnicu Supabase. Skontroluj pripojenie a obnov stránku.';
+  } else {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    document.getElementById('logout-btn').addEventListener('click', function(){
+      sb.auth.signOut();
+    });
+
+    sb.auth.onAuthStateChange(function(evt, session){
+      document.getElementById('login-section').style.display = session ? 'none' : 'block';
+      document.getElementById('dashboard-section').style.display = session ? 'block' : 'none';
+      document.getElementById('logout-btn').style.display = session ? 'inline-block' : 'none';
+      if (session) loadData();
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async function(e){
+      e.preventDefault();
+      document.getElementById('login-status').textContent = '';
+      const { error } = await sb.auth.signInWithPassword({
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      });
+      if (error) document.getElementById('login-status').textContent = 'Chyba: ' + error.message;
+    });
+
+    document.getElementById('diary-form').addEventListener('submit', async function(e){
+      e.preventDefault();
+      const stav = document.getElementById('diary-status');
+      stav.textContent = 'Ukladám...';
+      const { error } = await sb.from('admin_diary').insert([{
+        title: document.getElementById('d-title').value,
+        content: document.getElementById('d-content').value
+      }]);
+      if (error) { stav.textContent = 'Chyba: ' + error.message; return; }
+      stav.textContent = 'Uložené.';
+      e.target.reset();
+      loadDiary();
+    });
+
+    /* Mazanie cez delegovanie udalosti, aby sa id nemuselo vkladat do onclick */
+    document.addEventListener('click', async function(e){
+      const b = e.target.closest('[data-zmaz]');
+      if (!b) return;
+      if (!confirm('Naozaj zmazať tento záznam?')) return;
+      const { error } = await sb.from(b.dataset.tabulka).delete().eq('id', b.dataset.zmaz);
+      if (error) { alert('Nepodarilo sa zmazať: ' + error.message); return; }
+      loadData();
+    });
+  }
+
+  function chybovyRiadok(kde, error){
+    document.getElementById(kde).innerHTML =
+      '<p style="color:#ef4444;">Nepodarilo sa načítať: ' + bezpecne(error.message) + '</p>';
+  }
+
+  function tlacidloZmaz(tabulka, id){
+    return '<button class="tlacidlo cervene maly" data-zmaz="' + bezpecne(id) +
+           '" data-tabulka="' + bezpecne(tabulka) + '">Zmazať</button>';
+  }
+
+  async function loadData() {
+    const a = await sb.from('analytics').select('view_count').eq('id', 1).maybeSingle();
+    document.getElementById('view-count').textContent =
+      a.error ? '-' : (a.data ? a.data.view_count : 0);
+
+    const c = await sb.from('consultation_requests').select('*').order('created_at', { ascending: false });
+    if (c.error) { chybovyRiadok('calls-list', c.error); }
+    else {
+      document.getElementById('calls-list').innerHTML = c.data.length ? c.data.map(function(x){
+        return '<div class="karta">' +
+          '<div class="hlavicka-zaznamu">' +
+            '<div><strong>' + bezpecne(x.full_name) + '</strong> ' +
+            '(<a href="mailto:' + encodeURIComponent(x.email) + '" style="color:var(--tyrkys);">' +
+            bezpecne(x.email) + '</a>) - ' +
+            '<small style="color:var(--grafit);">' + datum(x.created_at) + '</small></div>' +
+            tlacidloZmaz('consultation_requests', x.id) +
+          '</div>' +
+          '<p style="margin:.5rem 0 0;white-space:pre-wrap;">' + bezpecne(x.details) + '</p>' +
+        '</div>';
+      }).join('') : '<p>Zatiaľ žiadne žiadosti.</p>';
+    }
+
+    const m = await sb.from('messages').select('*').order('created_at', { ascending: false });
+    if (m.error) { chybovyRiadok('msgs-list', m.error); }
+    else {
+      document.getElementById('msgs-list').innerHTML = m.data.length ? m.data.map(function(x){
+        return '<div class="karta">' +
+          '<div class="hlavicka-zaznamu">' +
+            '<div><strong>' + bezpecne(x.sender_name) + '</strong> - ' +
+            '<small style="color:var(--grafit);">' + datum(x.created_at) + '</small></div>' +
+            tlacidloZmaz('messages', x.id) +
+          '</div>' +
+          '<p style="margin:.5rem 0 0;white-space:pre-wrap;">' + bezpecne(x.message) + '</p>' +
+        '</div>';
+      }).join('') : '<p>Zatiaľ žiadne správy.</p>';
+    }
+
+    loadDiary();
+  }
+
+  async function loadDiary() {
+    const d = await sb.from('admin_diary').select('*').order('created_at', { ascending: false });
+    if (d.error) { chybovyRiadok('diary-list', d.error); return; }
+    document.getElementById('diary-list').innerHTML = d.data.length ? d.data.map(function(x){
+      return '<div class="karta">' +
+        '<div class="hlavicka-zaznamu">' +
+          '<h4 style="margin:0;">' + bezpecne(x.title) +
+          ' <small style="font-weight:normal;color:var(--grafit);">(' + datumKratky(x.created_at) + ')</small></h4>' +
+          tlacidloZmaz('admin_diary', x.id) +
+        '</div>' +
+        '<p style="margin:.5rem 0 0;white-space:pre-wrap;">' + bezpecne(x.content) + '</p>' +
+      '</div>';
+    }).join('') : '<p>Zatiaľ žiadne zápisy v denníku.</p>';
+  }
+</script>
+</body>
+</html>

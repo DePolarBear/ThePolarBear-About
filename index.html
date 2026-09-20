@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --papier:#F3F7F9;
@@ -60,11 +62,8 @@ body{
 }
 .obal{max-width:var(--stlpec);margin:0 auto;padding:0 2rem}
 
-/* ovládacia lišta */
-.ovladace{
-  display:flex;justify-content:flex-end;align-items:center;gap:1rem;
-  padding-top:1.5rem;
-}
+.ovladace-hore{display:flex;justify-content:flex-end;padding-top:1.5rem;min-height:3.5rem}
+.ovladace{display:flex;align-items:center;gap:1rem}
 .jazyky{
   display:inline-flex;gap:2px;padding:3px;
   border:1px solid var(--mriezka-silna);border-radius:999px;
@@ -101,13 +100,12 @@ html[data-rezim="dark"] .prepinac .puk{transform:translateX(24px)}
 html:not([data-rezim="dark"]) .prepinac .slnko{color:var(--papier)}
 html[data-rezim="dark"] .prepinac .mesiac{color:var(--papier)}
 
-/* zvislá os vľavo */
 .os{position:fixed;left:2.5rem;top:50%;transform:translateY(-50%);display:none;z-index:5;background:var(--panel);padding:.7rem 1rem .7rem .6rem;border-radius:14px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
 @media(min-width:1180px){.os{display:block}}
 .os ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--mriezka-silna)}
 .os li{position:relative}
 .os a{
-  display:block;padding:.45rem 0 .45rem 1rem;
+  display:block;padding:.45rem 0 .45rem 1.75rem;
   font-family:"IBM Plex Mono",monospace;font-size:.72rem;
   color:var(--grafit);text-decoration:none;letter-spacing:.02em;
 }
@@ -119,7 +117,6 @@ html[data-rezim="dark"] .prepinac .mesiac{color:var(--papier)}
 .os a[aria-current="true"]{color:var(--atrament)}
 .os a[aria-current="true"]::before{width:1.1rem;background:var(--tyrkys);height:2px}
 
-/* hlavička */
 .hero{padding:clamp(2rem,7vh,4.5rem) 0 0}
 .hero-mriezka{display:grid;gap:2.5rem;align-items:end}
 @media(min-width:820px){.hero-mriezka{grid-template-columns:1fr 17rem}}
@@ -136,7 +133,6 @@ figure.plate figcaption{
   font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--grafit);margin-top:.5rem;
 }
 
-/* horizont so signálom */
 .horizont{display:block;width:100%;height:clamp(80px,14vh,130px);margin-top:-1px}
 .horizont .ciara{fill:none;stroke:var(--tyrkys);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .horizont .ciara-slaba{fill:none;stroke:var(--lad);stroke-width:2;stroke-linejoin:round}
@@ -179,6 +175,28 @@ p{max-width:66ch}
 .odkazy a:hover::after,.odkazy a:focus-visible::after{transform:scaleX(1)}
 .odkazy a:hover span:last-child{color:var(--hlbka)}
 
+.mriezka-form{display:grid;gap:2.5rem}
+@media(min-width:760px){.mriezka-form{grid-template-columns:1fr 1fr}}
+.form-skupina{margin-bottom:1.25rem}
+.form-skupina label{display:block;font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--grafit);margin-bottom:.4rem}
+.form-vstup{
+  width:100%;padding:.7rem 1rem;
+  font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:.95rem;
+  color:var(--atrament);background:var(--papier);
+  border:1px solid var(--mriezka-silna);border-radius:6px;
+  transition:border-color .22s ease;
+}
+.form-vstup:focus{outline:none;border-color:var(--tyrkys)}
+.tlacidlo{
+  font-family:"IBM Plex Mono",monospace;font-size:.8rem;
+  padding:.6rem 1.25rem;border:1px solid var(--tyrkys);border-radius:999px;
+  background:var(--tyrkys);color:var(--papier);cursor:pointer;
+  transition:background-color .22s ease;
+}
+.tlacidlo:hover{background:var(--hlbka);border-color:var(--hlbka)}
+.pozn-sukromie{font-size:.85rem;color:var(--grafit);max-width:62ch;margin:1.75rem 0 0}
+.status-msg{margin-top:.75rem;font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--tyrkys)}
+
 a:focus-visible,.os a:focus-visible,.ovladace button:focus-visible{
   outline:2px solid var(--tyrkys);outline-offset:3px;
 }
@@ -186,6 +204,25 @@ a:focus-visible,.os a:focus-visible,.ovladace button:focus-visible{
 footer{
   padding:2.5rem 0 4rem;font-family:"IBM Plex Mono",monospace;
   font-size:.75rem;color:var(--grafit);border-top:1px solid var(--mriezka-silna);
+}
+
+
+/* Na sirokych oknach sa ovladace prisahaju k osi a scrolluju s nami */
+@media(min-width:1400px){
+  .bocny-panel{
+    position:fixed;left:2rem;top:50%;transform:translateY(-50%);z-index:5;
+    display:flex;flex-direction:column;align-items:flex-start;gap:1.1rem;
+    background:var(--panel);border-radius:14px;padding:.9rem 1rem;
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  }
+  .bocny-panel .ovladace{
+    max-width:none;margin:0;padding:0;
+    flex-direction:column;align-items:flex-start;gap:.65rem;
+  }
+  .bocny-panel .os{
+    position:static;transform:none;background:none;padding:0;border-radius:0;
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+  }
 }
 
 @media(prefers-reduced-motion:reduce){
@@ -197,17 +234,8 @@ footer{
 </head>
 <body>
 
-<nav class="os" aria-label="Sections">
-  <ol>
-    <li><a href="#top" data-t="os-start">start</a></li>
-    <li><a href="#about" data-t="os-about">about</a></li>
-    <li><a href="#studies" data-t="os-studies">studies</a></li>
-    <li><a href="#work" data-t="os-work">work</a></li>
-    <li><a href="#links" data-t="os-links">links</a></li>
-  </ol>
-</nav>
-
-<div class="obal ovladace">
+<div class="obal ovladace-hore" id="ovladace-hore">
+<div class="ovladace">
   <div class="jazyky" role="group" aria-label="Language">
     <button type="button" data-jazyk="en" aria-pressed="true">EN</button>
     <button type="button" data-jazyk="sk" aria-pressed="false">SK</button>
@@ -219,6 +247,23 @@ footer{
     <span class="ikona mesiac"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 14.6A8.6 8.6 0 0 1 9.4 3.8a8.6 8.6 0 1 0 10.8 10.8z"/></svg></span>
   </button>
 </div>
+</div>
+
+<div class="bocny-panel">
+<div id="ovladace-bok"></div>
+<nav class="os" aria-label="Sections">
+  <ol>
+    <li><a href="#top" data-t="os-start">start</a></li>
+    <li><a href="#about" data-t="os-about">about</a></li>
+    <li><a href="#studies" data-t="os-studies">studies</a></li>
+    <li><a href="#work" data-t="os-work">work</a></li>
+    <li><a href="#contact" data-t="os-contact">contact</a></li>
+    <li><a href="#links" data-t="os-links">links</a></li>
+  </ol>
+</nav>
+</div>
+
+
 
 <main>
 <section id="top" class="hero">
@@ -265,7 +310,7 @@ footer{
           <h3 data-t="e2">Process control</h3>
           <p data-t="ep2">Field of study: cybernetics. Analysis and synthesis of automated control and information systems for safety-critical processes: intelligent transport systems, signalling and communication, industrial and robotic control, and system design that uses artificial intelligence. Python, PHP and MySQL, UML and OCL, MATLAB, SCADA and HMI.</p>
         </div>
-        <div class="stav" data-t="es2">master's, from september 2026</div>
+        <div class="stav" data-t="es2">master's, from September 2026</div>
       </li>
     </ul>
   </div>
@@ -322,6 +367,51 @@ footer{
   </div>
 </section>
 
+<!-- CONTACT & MESSAGES SECTION -->
+<section id="contact">
+  <div class="obal">
+    <h2 data-t="h-contact">Contact & Messages</h2>
+    <div class="mriezka-form">
+      <div>
+        <h3 style="font-size:1.1rem;margin:0 0 1rem;" data-t="h-call">Book a Call / Consultation</h3>
+        <form id="consultation-form">
+          <div class="form-skupina">
+            <label for="c-name" data-t="lbl-name">Your Name / Company</label>
+            <input type="text" id="c-name" maxlength="80" class="form-vstup" required placeholder="John Doe">
+          </div>
+          <div class="form-skupina">
+            <label for="c-email" data-t="lbl-email">Your Email</label>
+            <input type="email" id="c-email" maxlength="120" class="form-vstup" required placeholder="john@example.com">
+          </div>
+          <div class="form-skupina">
+            <label for="c-details" data-t="lbl-details">Project Details / Agenda</label>
+            <textarea id="c-details" rows="4" maxlength="2000" class="form-vstup" required placeholder="Describe what you would like to discuss..."></textarea>
+          </div>
+          <button type="submit" class="tlacidlo" data-t="btn-send-call">Request Call</button>
+        </form>
+        <div id="consultation-status" class="status-msg"></div>
+      </div>
+
+      <div>
+        <h3 style="font-size:1.1rem;margin:0 0 1rem;" data-t="h-msg">Leave a Message</h3>
+        <form id="message-form">
+          <div class="form-skupina">
+            <label for="m-name" data-t="lbl-alias">Name or Alias</label>
+            <input type="text" id="m-name" maxlength="80" class="form-vstup" required placeholder="Anonymous">
+          </div>
+          <div class="form-skupina">
+            <label for="m-text" data-t="lbl-msg">Message</label>
+            <textarea id="m-text" rows="4" maxlength="2000" class="form-vstup" required placeholder="Hello!"></textarea>
+          </div>
+          <button type="submit" class="tlacidlo" data-t="btn-send-msg">Send Message</button>
+        </form>
+        <div id="message-status" class="status-msg"></div>
+      </div>
+    </div>
+    <p class="pozn-sukromie" data-t="pozn-sukromie">Your name and email are stored only so that I can reply, are never shared with anyone else, and are deleted once we are done. Write to tomas.ranusa@protonmail.com if you want them removed sooner.</p>
+  </div>
+  </section>
+
 <section id="links">
   <div class="obal">
     <h2 data-t="h-links">Links</h2>
@@ -330,7 +420,8 @@ footer{
       <li><a href="https://depolarbear.itch.io/" rel="me"><span>itch.io</span><span data-t="l2">assets</span></a></li>
       <li><a href="https://x.com/dDePolarBear" rel="me"><span>X</span><span>@dDePolarBear</span></a></li>
       <li><a href="https://www.linkedin.com/in/tom%C3%A1%C5%A1-ranu%C5%A1a-497642357/" rel="me"><span>LinkedIn</span><span data-t="l4">profile</span></a></li>
-      <li><a href="mailto:tomas.ranusa@gmail.com"><span>Email</span><span>tomas.ranusa@gmail.com</span></a></li>
+      <li><a href="mailto:tomas.ranusa@protonmail.com"><span>Email</span><span>tomas.ranusa@protonmail.com</span></a></li>
+      <li><a href="admin.html"><span>Admin Portal</span><span data-t="l-admin">private</span></a></li>
     </ul>
   </div>
 </section>
@@ -343,10 +434,16 @@ footer{
 <script>
 (function(){
   var slovnik = {
-    en:{"aria-rezim":"Dark mode"},
+    en:{
+      "aria-rezim":"Dark mode", "os-contact":"contact", "h-contact":"Contact & Messages",
+      "h-call":"Book a Call / Consultation", "lbl-name":"Your Name / Company", "lbl-email":"Your Email",
+      "lbl-details":"Project Details / Agenda", "btn-send-call":"Request Call",
+      "h-msg":"Leave a Message", "lbl-alias":"Name or Alias", "lbl-msg":"Message",
+      "btn-send-msg":"Send Message", "l-admin":"private"
+    },
     sk:{
       "os-start":"začiatok","os-about":"o mne","os-work":"projekty","os-links":"odkazy",
-      "os-studies":"štúdium",
+      "os-studies":"štúdium", "os-contact":"kontakt", "h-contact":"Kontakt a Správy",
       "h-studies":"Štúdium",
       "e1":"Automatizácia",
       "ep1":"Študijný odbor kybernetika. Riadenie procesov s podporou informačných a komunikačných technológií, s dôrazom na bezpečnostne kritické riadiace a komunikačné systémy na báze PLC a priemyselných sietí. C, C++, MATLAB, PLC a TIA Portal, ATMEL, HTML a CSS.",
@@ -381,13 +478,18 @@ footer{
       "p6":"SFML a žiadny engine. Ťahový boj na mriežke, hľadanie cesty, ktoré musí obísť stromy, a rozhranie postavené od nuly. Naučilo ma to viac než ktorýkoľvek tutoriál.",
       "s6":"učebný projekt",
       "h-links":"Odkazy",
-      "l1":"kód","l2":"modely","l4":"profil",
+      "l1":"kód","l2":"modely","l4":"profil", "l-admin":"súkromné",
+      "h-call":"Dohodnúť hovor / Konzultácia", "lbl-name":"Tvoje meno / Firma", "lbl-email":"E-mail",
+      "lbl-details":"Detaily projektu / Téma hovoru", "btn-send-call":"Odoslať žiadosť",
+      "h-msg":"Nechať odkaz", "lbl-alias":"Meno alebo prezývka", "lbl-msg":"Správa",
+      "btn-send-msg":"Odoslať správu",
+      "pozn-sukromie":"Tvoje meno a e-mail ukladám len preto, aby som ti vedel odpovedať, nikomu ich neposkytujem a po vybavení ich mažem. Ak ich chceš zmazať skôr, napíš na tomas.ranusa@protonmail.com.",
       "footer":"Písané a kreslené na Slovensku.",
       "aria-rezim":"Tmavý režim"
     },
     cz:{
       "os-start":"začátek","os-about":"o mně","os-work":"projekty","os-links":"odkazy",
-      "os-studies":"studium",
+      "os-studies":"studium", "os-contact":"kontakt", "h-contact":"Kontakt a Zprávy",
       "h-studies":"Studium",
       "e1":"Automatizace",
       "ep1":"Studijní obor kybernetika. Řízení procesů s podporou informačních a komunikačních technologií, s důrazem na bezpečnostně kritické řídicí a komunikační systémy na bázi PLC a průmyslových sítí. C, C++, MATLAB, PLC a TIA Portal, ATMEL, HTML a CSS.",
@@ -413,7 +515,7 @@ footer{
       "p3":"Systém pro analýzu pohybu pro klinické použití, vyvíjený ve výzkumném centru jako diplomová práce kolegy. Moje část je webová strana: rozhraní v NiceGUI a Python backend, který zaznamená měření, drží video synchronizované se senzorovými daty a výsledek ukáže lékaři.",
       "s3":"moje část: web a backend",
       "n4":"3D RPG v Unity",
-      "p4":"Terén generovaný šumem, vesnice umístěné na rovných místech, která si najde, NPC s větveným dialogem. Všechno je napsané, ne natažené odjinud, a přesně o to jde.",
+      "p4":"Terén generovaný šumom, vesnice umístěné na rovných místech, která si najde, NPC s větveným dialogem. Všechno je napsané, ne natažené odjinud, a přesně o to jde.",
       "s4":"pracuje se",
       "n5":"Low-poly modely",
       "p5":"Modely, které dělám v Blenderu do té hry. Ty, se kterými jsem spokojený, dávám na itch.io.",
@@ -422,7 +524,12 @@ footer{
       "p6":"SFML a žádný engine. Tahový souboj na mřížce, hledání cesty, které musí obejít stromy, a rozhraní postavené od nuly. Naučilo mě to víc než kterýkoli tutoriál.",
       "s6":"učební projekt",
       "h-links":"Odkazy",
-      "l1":"kód","l2":"modely","l4":"profil",
+      "l1":"kód","l2":"modely","l4":"profil", "l-admin":"soukromé",
+      "h-call":"Sjednat hovor / Konzultace", "lbl-name":"Tvoje jméno / Firma", "lbl-email":"E-mail",
+      "lbl-details":"Detaily projektu / Téma hovoru", "btn-send-call":"Odeslat žádost",
+      "h-msg":"Napsat vzkaz", "lbl-alias":"Jméno nebo přezdívka", "lbl-msg":"Zpráva",
+      "btn-send-msg":"Odeslat zprávu",
+      "pozn-sukromie":"Tvoje jméno a e-mail ukládám jen proto, abych ti mohl odpovědět, nikomu je neposkytuji a po vyřízení je mažu. Pokud je chceš smazat dřív, napiš na tomas.ranusa@protonmail.com.",
       "footer":"Psáno a kresleno na Slovensku.",
       "aria-rezim":"Tmavý režim"
     }
@@ -483,6 +590,7 @@ footer{
     var dno = document.documentElement.scrollHeight - window.innerHeight - 2;
     if(window.scrollY >= dno) aktivna = sekcie[sekcie.length - 1];
     oznac(aktivna.id);
+    umiestniOvladace();
   }
 
   var caka = false;
@@ -491,10 +599,84 @@ footer{
     caka = true;
     window.requestAnimationFrame(function(){ caka = false; prepocitaj(); });
   }
+  var ovladace = document.querySelector('.ovladace');
+  var miestoHore = document.getElementById('ovladace-hore');
+  var miestoBok = document.getElementById('ovladace-bok');
+  var siroko = window.matchMedia('(min-width:1400px)');
+
+  function umiestniOvladace(){
+    var schovane = siroko.matches && window.scrollY > miestoHore.getBoundingClientRect().height + 24;
+    var ciel = schovane ? miestoBok : miestoHore;
+    if (ovladace.parentNode !== ciel) ciel.appendChild(ovladace);
+  }
+  if (siroko.addEventListener) siroko.addEventListener('change', umiestniOvladace);
+  umiestniOvladace();
+
   window.addEventListener("scroll", naplanuj, {passive:true});
   window.addEventListener("resize", naplanuj);
   prepocitaj();
 
+})();
+</script>
+
+<!-- SUPABASE LOGIKA -->
+<script>
+(function(){
+  const SUPABASE_URL = 'https://ybajdglmvygbiurxnlgg.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InliYWpkZ2xtdnlnYml1cnhubGdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NzY0NDksImV4cCI6MjEwNTQ1MjQ0OX0.XiQkxvhM-z02FUiBk2TDkrDjqKOFG3VeCElEX-mFdLU';
+
+  const formulare = ['consultation-form', 'message-form'];
+
+  /* Ak sa kniznica nenacita, formulare by sa bez tejto poistky odoslali
+     klasicky cez prehliadac, stranka by sa obnovila a sprava by zmizla. */
+  if (!window.supabase) {
+    formulare.forEach(function(id){
+      var f = document.getElementById(id);
+      if (f) f.addEventListener('submit', function(e){ e.preventDefault(); });
+    });
+    ['consultation-status', 'message-status'].forEach(function(id){
+      var s = document.getElementById(id);
+      if (s) s.textContent = 'Formulár je práve nedostupný. Napíš mi prosím na tomas.ranusa@protonmail.com.';
+    });
+    return;
+  }
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  window.addEventListener('DOMContentLoaded', async function(){
+    try { await sb.rpc('increment_page_view'); } catch (e) {}
+  });
+
+  function posli(formId, statusId, tabulka, zber){
+    document.getElementById(formId).addEventListener('submit', async function(e){
+      e.preventDefault();
+      const status = document.getElementById(statusId);
+      const tlacidlo = e.target.querySelector('button[type="submit"]');
+      tlacidlo.disabled = true;
+      status.textContent = 'Odosielam...';
+
+      const { error } = await sb.from(tabulka).insert([zber()]);
+
+      tlacidlo.disabled = false;
+      status.textContent = error ? 'Chyba: ' + error.message : 'Odoslané, ďakujem.';
+      if (!error) e.target.reset();
+    });
+  }
+
+  posli('consultation-form', 'consultation-status', 'consultation_requests', function(){
+    return {
+      full_name: document.getElementById('c-name').value.trim(),
+      email: document.getElementById('c-email').value.trim(),
+      details: document.getElementById('c-details').value.trim()
+    };
+  });
+
+  posli('message-form', 'message-status', 'messages', function(){
+    return {
+      sender_name: document.getElementById('m-name').value.trim(),
+      message: document.getElementById('m-text').value.trim()
+    };
+  });
 })();
 </script>
 </body>
